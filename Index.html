@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insantama Analytics v10 - Dual Channel Backup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #05060f;
+            --card-bg: rgba(15, 18, 36, 0.95);
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --neon-green: #39ff14;
+            --neon-red: #ff3131;
+            --text-color: #e0e0e0;
+            --star-color: #ffda00;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-color);
+            margin: 0; padding: 20px; min-height: 100vh;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header {
+            text-align: center; margin-bottom: 20px; padding: 20px;
+            border: 1px solid var(--neon-blue);
+            background: rgba(0, 243, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+        }
+
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin: 0; }
+
+        /* DASHBOARD KELAS */
+        #dashboard { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin: 30px 0; }
+        .btn-class {
+            padding: 20px 40px; font-size: 1.5rem; background: var(--card-bg);
+            border: 2px solid var(--neon-purple); color: var(--neon-purple);
+            cursor: pointer; transition: 0.3s; font-family: 'Orbitron', sans-serif; border-radius: 8px;
+        }
+        .btn-class:hover { box-shadow: 0 0 20px var(--neon-purple); background: var(--neon-purple); color: white; }
+
+        /* KONTROL UTAMA */
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; }
+        button {
+            background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue);
+            padding: 8px 15px; cursor: pointer; font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase; font-size: 0.8rem; border-radius: 4px;
+        }
+        button:hover { background: var(--neon-blue); color: black; box-shadow: 0 0 10px var(--neon-blue); }
+
+        .btn-danger { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-report { border-color: var(--neon-green); color: var(--neon-green); }
+
+        /* TABEL SETTING */
+        .table-wrapper {
+            max-height: 65vh; overflow-y: auto; border: 1px solid var(--neon-blue);
+            background: var(--card-bg); border-radius: 8px;
+        }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        thead th {
+            position: sticky; top: 0; background: #0a0b1e; color: var(--neon-blue);
+            z-index: 100; padding: 15px; border-bottom: 2px solid var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+        }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .name-td { text-align: left; font-weight: bold; min-width: 220px; color: var(--neon-green); }
+
+        /* BINTANG UKURAN BESAR */
+        .star-cell { 
+            cursor: pointer; 
+            font-size: 1.8rem; 
+            width: 55px;
+            transition: 0.1s;
+        }
+        .star-cell:active { transform: scale(1.4); }
+        .star-active { color: var(--star-color); text-shadow: 0 0 12px var(--star-color); }
+        .star-empty { color: rgba(255, 255, 255, 0.05); }
+
+        /* PIVOT & MODAL */
+        #view-reports {
+            background: #0f1224; padding: 20px; border: 2px solid var(--neon-purple);
+            margin-bottom: 20px; display: none; border-radius: 10px;
+        }
+        .progress-bar { height: 8px; background: #222; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue)); }
+
+        #admin-panel { background: #0f1224; padding: 20px; border: 2px solid var(--neon-purple); margin-bottom: 20px; display: none; border-radius: 10px; }
+        textarea { width: 100%; height: 80px; background: #000; border: 1px solid var(--neon-purple); color: white; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+
+        .hidden { display: none !important; }
+
+        /* EMERGENCY MODAL */
+        #emergency-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #1a1a2e; border: 2px solid var(--neon-red); padding: 30px;
+            z-index: 1000; text-align: center; border-radius: 15px; display: none;
+            box-shadow: 0 0 50px rgba(255, 49, 49, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+<!-- MODAL DARURAT -->
+<div id="emergency-modal">
+    <h3 style="color: var(--neon-red); font-family: 'Orbitron';">AKSES DARURAT</h3>
+    <p>Master Key salah. Kirim backup kode ke:</p>
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+        <button onclick="sendWA()" style="border-color: var(--neon-green); color: var(--neon-green);">WhatsApp</button>
+        <button onclick="sendEmail()" style="border-color: var(--neon-blue); color: var(--neon-blue);">Email</button>
+    </div>
+    <br>
+    <button onclick="closeEmergency()" style="font-size: 0.6rem; border:none; color: #666;">Tutup</button>
+</div>
+
+<div class="container">
+    <header>
+        <h1>SDIT INSANTAMA</h1>
+        <div id="current-class-display" style="color: var(--neon-purple); font-weight: bold; margin-top: 5px; font-family: 'Orbitron';"></div>
+    </header>
+
+    <div id="view-dashboard">
+        <div class="controls">
+            <h2 style="font-family: 'Orbitron'; color: var(--neon-blue); margin: 0;">REKAP HAFALAN</h2>
+            <div>
+                <button id="btn-master-report" class="btn-report hidden" onclick="showReports()">Laporan Progres</button>
+                <button onclick="setRole('teacher')">Mode Guru</button>
+                <button onclick="forgotPin()" class="btn-danger">Lupa PIN</button>
+            </div>
+        </div>
+        <div id="dashboard"></div>
+        <div id="teacher-global-controls" class="hidden" style="text-align: center; margin-top: 20px;">
+            <button onclick="addNewClass()">+ Tambah Kelas Baru</button>
+            <button onclick="changePin()">Ubah PIN</button>
+            <button onclick="exitTeacherMode()" style="border-color: #fff; color: #fff;">Keluar Mode Guru</button>
+        </div>
+    </div>
+
+    <!-- PIVOT SECTION -->
+    <div id="view-reports">
+        <button onclick="hideReports()">← Tutup Laporan</button>
+        <h2 style="color: var(--neon-purple); font-family: 'Orbitron';">PIVOT KELAS</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>KELAS</th><th>SISWA</th><th>TOTAL</th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        <th>6</th><th>7</th><th>8</th><th>9</th><th>10</th>
+                    </tr>
+                </thead>
+                <tbody id="pivot-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CLASS SECTION -->
+    <div id="view-class" class="hidden">
+        <button onclick="showDashboard()">← Dashboard</button>
+        <div class="controls" style="margin-top: 15px;">
+            <div id="role-indicator" style="border: 1px solid #fff; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem;">MODE: ORANG TUA</div>
+            <div id="teacher-actions" class="hidden">
+                <button onclick="showImportModal()">Impor Excel</button>
+                <button onclick="deleteCurrentClass()" class="btn-danger">Hapus Kelas</button>
+            </div>
+        </div>
+
+        <div id="admin-panel">
+            <textarea id="excel-input" placeholder="Tempel nama dari Excel..."></textarea>
+            <button onclick="processImport()">Proses Impor</button>
+            <button onclick="closeImportModal()">Batal</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>NO</th><th>NAMA SISWA</th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        <th>6</th><th>7</th><th>8</th><th>9</th><th>10</th>
+                        <th class="th-action hidden">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="student-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- DATABASE ADMIN ---
+    const MASTER_KEY = "INSANTAMA2026";
+    const ADMIN_EMAIL = "kholidadnin9@gmail.com";
+    const ADMIN_WA = "6285716381591";
+
+    let db = JSON.parse(localStorage.getItem('insantama_v10_db')) || { pin: "1234", classes: {} };
+    let currentClass = null;
+    let currentRole = 'parent';
+
+    function saveDB() { localStorage.setItem('insantama_v10_db', JSON.stringify(db)); }
+
+    // --- NAVIGASI ---
+    function showDashboard() {
+        currentClass = null;
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        document.getElementById('view-class').classList.add('hidden');
+        document.getElementById('view-reports').style.display = 'none';
+        renderDashboard();
+    }
+
+    function renderDashboard() {
+        const container = document.getElementById('dashboard');
+        container.innerHTML = '';
+        Object.keys(db.classes).forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-class'; btn.innerText = name;
+            btn.onclick = () => openClass(name);
+            container.appendChild(btn);
+        });
+        document.getElementById('teacher-global-controls').className = (currentRole === 'teacher') ? '' : 'hidden';
+        document.getElementById('btn-master-report').className = (currentRole === 'teacher') ? 'btn-report' : 'hidden';
+    }
+
+    function openClass(className) {
+        currentClass = className;
+        document.getElementById('view-dashboard').classList.add('hidden');
+        document.getElementById('view-class').classList.remove('hidden');
+        document.getElementById('current-class-display').innerText = "KELAS " + className;
+        renderTable();
+    }
+
+    // --- ANALISIS ---
+    function showReports() {
+        document.getElementById('view-reports').style.display = 'block';
+        const tbody = document.getElementById('pivot-tbody');
+        tbody.innerHTML = '';
+        Object.keys(db.classes).forEach(className => {
+            const students = db.classes[className];
+            if (students.length === 0) return;
+            let stats = new Array(10).fill(0);
+            students.forEach(s => s.progress.forEach((p, i) => { if(p) stats[i]++; }));
+            const totalPct = (stats.reduce((a,b)=>a+b,0) / (students.length * 10) * 100).toFixed(1);
+            let html = `<td>${className}</td><td>${students.length}</td><td>${totalPct}% <div class="progress-bar"><div class="progress-fill" style="width:${totalPct}%"></div></div></td>`;
+            stats.forEach(count => {
+                const p = ((count/students.length)*100).toFixed(0);
+                html += `<td style="color:${p==100?'var(--neon-green)':'white'}">${p}%</td>`;
+            });
+            const tr = document.createElement('tr'); tr.innerHTML = html; tbody.appendChild(tr);
+        });
+    }
+    function hideReports() { document.getElementById('view-reports').style.display = 'none'; }
+
+    // --- SECURITY & DUAL BACKUP ---
+    function setRole(role) {
+        if (role === 'teacher') {
+            const p = prompt("Masukkan PIN Guru:");
+            if (p === db.pin) currentRole = 'teacher';
+            else { alert("PIN Salah!"); return; }
+        }
+        updateUIVisibility(); renderDashboard();
+    }
+
+    function exitTeacherMode() { currentRole = 'parent'; updateUIVisibility(); renderDashboard(); }
+
+    function updateUIVisibility() {
+        const roleInd = document.getElementById('role-indicator');
+        roleInd.innerText = currentRole === 'teacher' ? "MODE: GURU (EDIT AKTIF)" : "MODE: ORANG TUA";
+        roleInd.style.color = currentRole === 'teacher' ? "var(--neon-blue)" : "#fff";
+        if (currentClass) renderTable();
+    }
+
+    function forgotPin() {
+        const input = prompt("Masukkan Master Key untuk Reset PIN ke 1234:");
+        if (input === MASTER_KEY) {
+            db.pin = "1234"; saveDB(); alert("PIN Reset ke 1234");
+        } else if (input !== null) {
+            document.getElementById('emergency-modal').style.display = 'block';
+        }
+    }
+
+    function sendWA() {
+        const msg = encodeURIComponent(`*ADMIN BACKUP*\nMaster Key: *${MASTER_KEY}*`);
+        window.open(`https://wa.me/${ADMIN_WA}?text=${msg}`, '_blank');
+        closeEmergency();
+    }
+
+    function sendEmail() {
+        const subject = encodeURIComponent("Backup Master Key");
+        const body = encodeURIComponent(`Halo Admin, Master Key Anda adalah: ${MASTER_KEY}`);
+        window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+        closeEmergency();
+    }
+
+    function closeEmergency() { document.getElementById('emergency-modal').style.display = 'none'; }
+
+    function changePin() {
+        const old = prompt("PIN Lama:");
+        if (old === db.pin) {
+            const n = prompt("PIN Baru:");
+            if (n) { db.pin = n; saveDB(); alert("PIN Diubah!"); }
+        }
+    }
+
+    // --- CORE LOGIC ---
+    function renderTable() {
+        const tbody = document.getElementById('student-tbody');
+        const thAction = document.querySelector('.th-action');
+        tbody.innerHTML = '';
+        thAction.className = (currentRole === 'teacher') ? 'th-action' : 'th-action hidden';
+        const students = db.classes[currentClass] || [];
+        students.forEach((s, sIdx) => {
+            const tr = document.createElement('tr');
+            let stars = '';
+            s.progress.forEach((done, pIdx) => {
+                stars += `<td class="star-cell ${done?'star-active':'star-empty'}" onclick="toggleStar(${sIdx},${pIdx})">${done?'★':'☆'}</td>`;
+            });
+            tr.innerHTML = `<td>${sIdx+1}</td><td class="name-td">${s.name}</td>${stars}<td class="${currentRole==='teacher'?'':'hidden'}"><button class="btn-danger" onclick="deleteStudent(${sIdx})">Hapus</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function toggleStar(sIdx, pIdx) {
+        if (currentRole !== 'teacher') return;
+        db.classes[currentClass][sIdx].progress[pIdx] = !db.classes[currentClass][sIdx].progress[pIdx];
+        saveDB(); renderTable();
+    }
+
+    function addNewClass() {
+        const n = prompt("Nama Kelas:");
+        if (n) {
+            const clean = n.toUpperCase().trim();
+            if (!db.classes[clean]) { db.classes[clean] = []; saveDB(); renderDashboard(); }
+        }
+    }
+
+    function deleteStudent(idx) { if(confirm("Hapus siswa?")) { db.classes[currentClass].splice(idx, 1); saveDB(); renderTable(); } }
+    function deleteCurrentClass() { if(confirm("Hapus kelas?")) { delete db.classes[currentClass]; saveDB(); showDashboard(); } }
+    function showImportModal() { document.getElementById('admin-panel').style.display = 'block'; }
+    function closeImportModal() { document.getElementById('admin-panel').style.display = 'none'; }
+    function processImport() {
+        const input = document.getElementById('excel-input').value;
+        const names = input.split('\n').filter(l => l.trim() !== "");
+        names.forEach(n => db.classes[currentClass].push({ name: n.trim(), progress: new Array(10).fill(false) }));
+        saveDB(); renderTable(); closeImportModal(); document.getElementById('excel-input').value = "";
+    }
+
+    renderDashboard();
+</script>
+</body>
+</html>
